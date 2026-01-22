@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Find Your Nearest Lighthouse</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .lighthouse-icon {
+            width: 200px;
+            height: auto;
+            margin: 0 auto 15px;
+            display: block;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        #status {
+            font-size: 16px;
+            color: #666;
+            margin: 15px 0;
+            line-height: 1.6;
+        }
+        
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .info-banner {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            color: #1565c0;
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        
+        .info-banner strong {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+        
+        .countdown-banner {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 16px;
+            display: none;
+            animation: slideDown 0.3s ease;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .countdown-banner.show {
+            display: block;
+        }
+        
+        .countdown-number {
+            font-size: 24px;
+            font-weight: bold;
+            margin: 0 5px;
+        }
+        
+        .lighthouse-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .lighthouse-card {
+            background: #f8f9fa;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .lighthouse-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            border-color: #667eea;
+        }
+        
+        .lighthouse-card.nearest {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border: 3px solid #4caf50;
+            box-shadow: 0 5px 20px rgba(76, 175, 80, 0.3);
+        }
+        
+        .nearest-badge {
+            position: absolute;
+            top: -10px;
+            right: -10px;
+            background: #4caf50;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        .lighthouse-card h3 {
+            color: #333;
+            font-size: 18px;
+            margin-bottom: 8px;
+        }
+        
+        .lighthouse-card.nearest h3 {
+            color: #2e7d32;
+        }
+        
+        .lighthouse-card p {
+            color: #666;
+            font-size: 13px;
+            line-height: 1.4;
+            margin-bottom: 10px;
+        }
+        
+        .distance {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-top: 5px;
+        }
+        
+        .lighthouse-card.nearest .distance {
+            background: #4caf50;
+        }
+        
+        .error {
+            color: #e74c3c;
+            font-weight: 500;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 25px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: transform 0.2s;
+            display: inline-block;
+            margin-top: 10px;
+        }
+        
+        .btn:hover {
+            transform: scale(1.05);
+        }
+        
+        .cancel-btn {
+            background: #e0e0e0;
+            color: #333;
+            margin-left: 10px;
+        }
+
+        @media (max-width: 600px) {
+            .lighthouse-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .lighthouse-icon {
+                width: 150px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <img src="Lighthouse-Communities.png" alt="Lighthouse Communities Logo" class="lighthouse-icon">
+            <h1>Find Your Nearest Lighthouse</h1>
+            
+            <div class="info-banner">
+                <strong>ℹ️ About Distance Calculations</strong>
+                Distances shown are approximations based on estimated road routes. Actual travel distances may vary depending on your chosen route and mode of transport.
+            </div>
+            
+            <div class="loader" id="loader"></div>
+            <div id="status">Getting your location...</div>
+        </div>
+
+        <div class="countdown-banner" id="countdownBanner">
+            Redirecting to nearest lighthouse in <span class="countdown-number" id="countdown">15</span> seconds
+            <br>
+            <small style="font-size: 13px; opacity: 0.9; margin-top: 5px; display: block;">
+                Click anywhere or scroll to cancel auto-redirect
+            </small>
+        </div>
+        
+        <div class="lighthouse-grid" id="lighthouseGrid"></div>
+    </div>
+
+    <script>
+         const lighthouses = [
+            {
+                name: "Aundh Lighthouse",
+                address: "The Lighthouse Complex, Old Aundh Ward Office Opp. Bremen Chowk, Spicer College road, Aundh, Pune",
+                lat: 18.561946006501245,
+                lng: 73.81471579990063,
+                mapsUrl: "https://www.google.com/maps/place/PMC+Smart+City+Light+House/@18.5600339,73.8066048,15z/data=!4m7!3m6!1s0x3bc2bf377b88d92d:0x28912cf351763a5f!8m2!3d18.561132!4d73.8149446!15sChBhdW5kaCBsaWdodGhvdXNlWhIiEGF1bmRoIGxpZ2h0aG91c2WSARBjb21tdW5pdHlfY2VudGVy4AEA!16s%2Fg%2F11csr1j0n7?coh=164777&entry=tt&shorturl=1"
+            },
+            {
+                name: "Yerwada Lighthouse",
+                address: "Annabhau Sathe Sabhagruh, Near Gunjan Talkies, Yerwada, Pune",
+                lat: 18.547884931323708,
+                lng: 73.88819744232829,
+                mapsUrl: "https://www.google.com/maps/place/Pune+City+Connect-+Yerawada+Lighthouse/@18.5476815,73.8860302,17z/data=!3m1!4b1!4m5!3m4!1s0x3bc2c0e28366fb9d:0x6768409be49427ec!8m2!3d18.5476815!4d73.8882189?coh=164777&entry=tt&shorturl=1"
+            }, 
+            {
+                name: "Hadapsar Lighthouse",
+                address: "3rd Floor, PMPML Building, Hadapsar Gadital, Hadapsar, Pune",
+                lat: 18.501304784125374,
+                lng: 73.9393346,
+                mapsUrl: "https://www.google.com/maps/place/Pune+City+Connect-+Hadapsar+Lighthouse/@18.5010606,73.9371459,17z/data=!3m1!4b1!4m5!3m4!1s0x3bc2c203220fffff:0x18ba2680ae77a24d!8m2!3d18.5010606!4d73.9393346?coh=164777&entry=tt&shorturl=1"
+            },
+            {
+                name: "Warje Lighthouse",
+                address: "Tirupati Nagar, Near Warje Jalshuddikarn Kendra, Amdekar Chowk, Juna Jakat Naka, Warje, Pune",
+                lat: 18.49297161262175,
+                lng: 73.8088843945589,
+                mapsUrl: "https://www.google.com/maps/place/Warje+Lighthouse,+Pune+City+Connect/@18.4864596,73.6670921,12z/data=!4m7!3m6!1s0x3bc2bf1fab1a97ef:0x4c6d2e862483d294!8m2!3d18.4864596!4d73.8071678!15sChB3YXJqZSBsaWdodGhvdXNlWhIiEHdhcmplIGxpZ2h0aG91c2WSARJ2b2NhdGlvbmFsX2NvbGxlZ2WaASNDaFpEU1VoTk1HOW5TMFZKUTBGblNVTmhkRWxtWmtwbkVBReABAA!16s%2Fg%2F11f62vvpqz?coh=164777&entry=tt&shorturl=1"
+            },
+            {
+                name: "Bhavani Peth Lighthouse",
+                address: "Savitribai Phule Smarak, Near Lohiyanagar Police Station Behind Central Fire Brigade, Ganj Peth, Pune",
+                lat: 18.507164255840728,
+                lng: 73.86559347087135,
+                mapsUrl: "https://www.google.com/maps/place/Pune+City+Connect+-+Bhavani+Peth+Lighthouse/@18.5067166,73.8632975,17z/data=!4m7!3m6!1s0x3bc2c162494604a5:0xa7b7ac3c4465ab88!8m2!3d18.5069445!4d73.8656388!15sCmVTYXZpdHJpYmFpIFBodWxlIFNtYXJhaywgTmVhciBMb2hpeWFuYWdhciBQb2xpY2UgU3RhdGlvbiBCZWhpbmQgQ2VudHJhbCBGaXJlIEJyaWdhZGUsIEdhbmogUGV0aCwgUHVuZVpkImJzYXZpdHJpYmFpIHBodWxlIHNtYXJhayBuZWFyIGxvaGl5YW5hZ2FyIHBvbGljZSBzdGF0aW9uIGJlaGluZCBjZW50cmFsIGZpcmUgYnJpZ2FkZSBnYW5qIHBldGggcHVuZZIBF25vbl9wcm9maXRfb3JnYW5pemF0aW9umgEjQ2haRFNVaE5NRzluUzBWSlEwRm5TVVF3TW1aeGFrZG5FQUXgAQA!16s%2Fg%2F11h3ngvssw?coh=164777&entry=tt&shorturl=1"
+            },
+            {
+                name: "Kondhwa Lighthouse",
+                address: "3rd Floor, PMT Building, Upper Bus Depot, Rajiv Gandhi Nagar, Bibwewadi-411036, Pune",
+                lat: 18.480805835534476,
+                lng: 73.86290578465662,
+                mapsUrl: "https://www.google.com/maps/place/Light+House,+A+%26+B+Wing,+Bibwewadi+Kondhwa+Rd,+Parshwanath+Nagar,+Ramyanagari+Housing+Society,+Bibwewadi,+Pune,+Maharashtra+411037/@18.4806125,73.86076,17z/data=!3m1!4b1!4m5!3m4!1s0x3bc2eaa1a7dd4b7b:0x8e2400d4c87c0183!8m2!3d18.4806125!4d73.8629487?coh=164777&entry=tt&shorturl=1"
+            },
+            {
+                name: "Tingre Nagar Lighthouse",
+                address: "Lane Number 7, Near Vidyanagar Bus Stop, Tingre Nagar, Pune, Maharashtra 411015",
+                lat: 18.579020251951402,
+                lng: 73.88966815396984,
+                mapsUrl: "https://www.google.com/maps/place/Lighthouse+Tingre+Nagar/@18.5787355,73.8876082,17z/data=!3m1!4b1!4m5!3m4!1s0x3bc2c127a7f9603b:0xdd64c7a12e5fa088!8m2!3d18.5787355!4d73.8897969?coh=164777&entry=tt&shorturl=1"
+            },
+            {
+                name: "Wadgaonsheri Lighthouse",
+                address: "Sr. No. 21/3, Karan Ceto Road, Sainikwadi, Wadgaon Sheri, Pune, Maharashtra 411014",
+                lat: 18.55409006750158,
+                lng: 73.9162206528376,
+                mapsUrl: "https://www.google.com/maps/place/Pune+City+Connect+Lighthouse/@18.5822416,73.8671255,13.74z/data=!4m7!3m6!1s0x3bc2c19f1ba7e7af:0x5ac2c538ca6d09d7!8m2!3d18.5511351!4d73.9158415!15sChdXYWRnYW9uc2hlcmkgTGlnaHRob3VzZZIBD3RyYWluaW5nX2NlbnRlcuABAA!16s%2Fg%2F11sxy6_zlk?coh=164777&entry=tt&shorturl=1"
+            },
+            {
+                name: "Kothrud Lighthouse",
+                address: "1st, 2nd and 3rd Floor, Geetai Sankul, Ideal Colony, Paud Road, Kothrud, Pune, Maharashtra 411038",
+                lat: 18.5095667,
+                lng: 73.8161273,
+                mapsUrl: "https://maps.google.com/?q=18.5095667,73.8161273"
+            },
+            {
+                name: "Kasba Peth Lighthouse",
+                address: "Bholagir Prathmik Vidyalaya, PMC School No.4, 343 Somwar Peth Pune – 411011",
+                lat: 18.521617362594633,
+                lng: 73.8667113730151,
+                mapsUrl: "https://www.google.com/maps/place/Kasba+Peth+Lighthouse/@18.5214139,73.8644583,17z/data=!3m1!4b1!4m5!3m4!1s0x3bc2c1fc1193508b:0xc86ef5f8b9cb9555!8m2!3d18.5214139!4d73.866647?coh=164777&entry=tt&shorturl=1"
+            },
+            {
+                name: "Wanowrie Lighthouse",
+                address: "Bharat Ratna Babasaheb Ambedkar hall, Shivneri Nagar, lane no 24, Pune -411048, Maharashtra",
+                lat: 18.475546117338084,
+                lng: 73.88587868465662,
+                mapsUrl: "https://www.google.com/maps/place/Wanowrie+Lighthouse/data=!4m2!3m1!1s0x0:0x4234c8759dafa645?sa=X&ved=1t:2428&ictx=111"
+            },
+            {
+                name: "Janata Vasahat Lighthouse",
+                address: "Near Janata Sanskrutik Hall Fire Brigade, Parvati Paytha, Pune, Maharashtra 411009",
+                lat: 18.499791965247592,
+                lng: 73.8484929576717,
+                mapsUrl: "https://www.google.com/maps/place/Janata+Vasahat+Lighthouse/data=!4m2!3m1!1s0x0:0x2a727396b71f34fe?sa=X&ved=1t:2428&ictx=111"
+            },
+            {
+                name: "Bibwewadi Lighthouse",
+                address: "4 th floor, Raskar Palace, Chintamani nagar, opp. Bullet Tea Hotel, Renuka Society, SBI BANK, Bibwewadi, Pune, Maharashtra 411037",
+                lat: 18.464651824191744,
+                lng: 73.86490994047738,
+                mapsUrl: "https://www.google.com/maps/place/Bibwewadi+Lighthouse/@18.464489,73.8650065,826m/data=!3m2!1e3!4b1!4m6!3m5!1s0x3bc2eb006a2b3b0d:0xf0c9106ec2902076!8m2!3d18.464489!4d73.8650065!16s%2Fg%2F11y2r1t8sm?entry=ttu&g_ep=EgoyMDI2MDEwNy4wIKXMDSoASAFQAw%3D%3D"
+            },
+            {
+                name: "Shivaji Nagar Lighthouse",
+                address: "Savitribai Phule Sabhagruh, 1st floor, Shinde Vasti, Bhujbal Road, Gokhale Nagar, Pune, Maharashtra 411016",
+                lat: 18.5301389,
+                lng: 73.8249722,
+                mapsUrl: "https://www.google.com/maps?q=18.5301389,73.8249722"
+            },
+            {
+                name: "Pimpri Lighthouse",
+                address: "Pimpri Chowk, Atma Nagar, Kharalwadi, Pimpri Colony, Pimpri Chinchwad, Maharashtra - 411018",
+                lat: 18.62813690195776,
+                lng: 73.80728188465662,
+                mapsUrl: "https://www.google.com/maps/place/Lighthouse+Skilling+Centre+-+Pimpri/@18.6279539,73.8073248,17z/data=!3m1!4b1!4m6!3m5!1s0x3bc2b99881cc7285:0x59517dfe9f7854a5!8m2!3d18.6279539!4d73.8073248!16s%2Fg%2F11pv25pk4x?"
+            },
+            {
+                name: "Nigdi Lighthouse",
+                address: "Kounteya Housing Society, Sector- 21, Yamuna Nagar, Nigdi, Pimpri- Chinchwad, Maharashtra 411044",
+                lat: 18.664700085522274,
+                lng: 73.78149793068678,
+                mapsUrl: "https://www.google.com/maps/place/Lighthouse+-+Skill+Development+Center/@18.6644663,73.7814121,825m/data=!3m2!1e3!4b1!4m6!3m5!1s0x3bc2b786d7f7968f:0x1b46b37890a9daff!8m2!3d18.6644663!4d73.7814121!16s%2Fg%2F11k9cqtz__?authuser=0&entry=ttu&g_ep=EgoyMDI2MDEwNy4wIKXMDSoASAFQAw%3D%3D"
+            },
+            {
+                name: "Chinchwad Lighthouse",
+                address: "Zonipu office, 2nd floor, Chinchwad Police Station, Back side Chapekar Chowk, Gandhi Peth, Chinchwad Gaon, Pimpri-Chinchwad, Maharashtra 411033",
+                lat: 18.629639267375108,
+                lng: 73.77980801164152,
+                mapsUrl: "https://www.google.com/maps/place/JQHH%2BPX3+Lighthouse+Skilling+Center+-+Chinchwad,+Gandhi+Peth,+Chinchwad+Gaon,+Chinchwad,+Pimpri-Chinchwad,+Maharashtra+411033/data=!4m2!3m1!1s0x3bc2b931218757fb:0xc1f7d65a427652f8?utm_source=mstt_1&entry=gps&lucs=47068615,,47075915&g_ep=CAESCjExLjEwOS4xMDEYACDXggMqEjQ3MDY4NjE1LCw0NzA3NTkxNUICSU4%3D"
+            },
+            {
+                name: "Bhopkhel Lighthouse",
+                address: "Hanuman Mandir Road, Rambagh Colony Bhopkhel 411015",
+                lat: "18.572674",
+                lng: "73.7471016",
+                mapsUrl: "https://www.google.com/maps/place/Ram+Nagar,+Bopkhel,+Pune,+Pimpri-Chinchwad,+Maharashtra+411015/data=!4m6!3m5!1s0x3bc2c74e237d4447:0x39cc4e1cd6eb8e!7e2!8m2!3d18.5833173!4d73.85412509999999?utm_source=mstt_1&entry=gps&coh=192189&g_ep=CAESCjExLjEyNC4xMDIYACCIJypRLDk0MjE2NDEzLDk0MjEyNDk2LDk0MjA3Mzg4LDk0MjA3NTA2LDk0MjE3NTIzLDk0MjE4NjQ3LDQ3MDg3MTE4LDQ3MDg0MzkzLDk0MjEzMjAwQgJJTg%3D%3D"
+            },
+            {
+                name: "Bhosari Lighthouse",
+                address: "PCMT, Bus stop, Gavhanevasti, Bhosari, Pimpri-Chinchwad, Maharashtra 411039",
+                lat:18.6206466 ,
+                lng: 73.8490321,
+                mapsUrl: "https://www.google.com/maps/place/Lighthouse+Skilling+Centre+-+Bhosari/@18.6206466,73.8490321,825m/data=!3m2!1e3!4b1!4m6!3m5!1s0x3bc2c73d3c15fa6f:0xe4ee8aef1292b0d0!8m2!3d18.6206466!4d73.8490321!16s%2Fg%2F11v06lds9v?entry=ttu&g_ep=EgoyMDI2MDExMy4wIKXMDSoASAFQAw%3D%3D"
+            },
+            {
+                name: "Borhade Wadi Lighthouse",
+                address: "Block-C, Kasturi Voyage, Vinayak Nagar Colony Rd, St Savata Mali Nagar, Moshi, Pimpri-Chinchwad, Maharashtra 412105",
+                lat: 18.664774591650925,
+                lng: 73.84285070185092,
+                mapsUrl: "https://www.google.com/maps/place/MR7V%2BR4C+Ganesh+Mandir,+Vinayak+Nagar,+Vinayak+Nagar+Colony+Rd,+Lane+4,+Borhade+Wadi,+Moshi,+Pimpri-Chinchwad,+Maharashtra+412105/data=!4m2!3m1!1s0x3bc2c765d9ad5799:0xd427a0be0f6fe30d?utm_source=mstt_1&entry=gps&g_ep=CAESBzExLjIyLjIYACD___________8BKgBCAklO"
+            },
+            {
+                name: "Kiwale Lighthouse",
+                address: "Co-Op, 4th Floor, Pimpri Chinchwad Municipal, E1, Kiwale, Pimpri-Chinchwad, Dehu Road, Maharashtra 412101",
+                lat: 18.66772577459516,
+                lng: 73.72975332513398,
+                mapsUrl: "https://www.google.com/maps/place/Lighthouse+Skilling+Centre+-+Kiwale/data=!4m2!3m1!1s0x0:0x37a8f2b29d1fda36?sa=X&ved=1t:2428&ictx=111"
+            },
+            {
+                name: "Nehru Nagar Lighthouse",
+                address: "C ward Office Lighthouse - 'C' Zone ward office, Pimpri Chinchwad Municipal Corporation, Neharunagar, Bhosari, Maharashtra",
+                lat: 18.6314848,
+                lng: 73.8270191,
+                mapsUrl: "https://maps.app.goo.gl/inecLtmoiDatJASy7"
+            },
+            {
+                name: "Dapodi Lighthouse",
+                address: "C wing, near Siddhi Towers, Ganesh Nagar, Dapodi, Pimpri-Chinchwad, Maharashtra 411012",
+                lat: 18.582484320559495,
+                lng: 73.83118208465662,
+                mapsUrl: "https://www.google.com/maps/place/Dapodi+Lighthouse/data=!4m2!3m1!1s0x0:0x5eca0b5b2caf9f0c?sa=X&ved=1t:2428&ictx=111 "
+            },
+            {
+                name: "Akurdi Lighthouse",
+                address: "Lighthouse Connect Center, Vyapari Sankul, behind Karsankalan karyalay, panchatara Nagar, Bijali Nagar, Ganga Nagar, Akurdi, Ganganagar, Pimpri-Chinchwad, Maharashtra 411035",
+                lat: 18.64768198407311,
+                lng: 73.77950061349247,
+                mapsUrl: "https://www.google.com/maps/place/Lighthouse+Connect+Center,+Akurdi/data=!4m2!3m1!1s0x0:0xf88441afbb4e9b52?sa=X&ved=1t:2428&ictx=111"
+            },
+            {
+                name: "Chikhali Lighthouse",
+                address: "Above Government Hospital Chikhali, Opp Sapana Bangles Behind PDCC Bank Chikhali, Gaon, Chikhali, Pimpri-Chinchwad, Maharashtra 411062",
+                lat: 18.684306548745845,
+                lng: 73.8143194,
+                mapsUrl: "https://www.google.com/maps/place/Lighthouse+Connect+Centre+Chikhali/data=!4m2!3m1!1s0x0:0x4826420336905848?sa=X&ved=1t:2428&hl=en-GB&gl=in&ictx=111"
+            },
+            {
+                name: "Ch. Sambhaji Nagar Lighthouse",
+                address: "N5 Community Hall, Near Dharmveer Sambhaji School, N5 Cidco, Ch Sambhaji Nagar (Aurangabad), Maharashtra 431007",
+                lat: 19.883167139113482,
+                lng: 75.36236947116416,
+                mapsUrl: "https://www.google.com/maps/place/Chhatrapati+Sambhajinagar+-+Lighthouse/data=!4m2!3m1!1s0x0:0x1d18c5a39898dd4c?sa=X&ved=1t:2428&ictx=111"
+            },
+            {
+                name: "Dombivli Lighthouse",
+                address: "Savarkar Rd, next to Mahavir Height, Pendse Nagar, Dombivli East, Dombivli, Maharashtra 421201",
+                lat: 19.216787944774957,
+                lng: 73.09540484417923,
+                mapsUrl: "https://www.google.com/maps/place/KDMC+-+LightHouse/@19.2165448,73.0953512,17z/data=!3m1!4b1!4m6!3m5!1s0x3be795cfa012025b:0xe8ebad3e39134598!8m2!3d19.2165448!4d73.0953512!16s%2Fg%2F11pzbq3stz?entry=ttu&g_ep=EgoyMDI2MDEwNy4wIKXMDSoASAFQAw%3D%3D"
+            },
+            {
+                name: "Ambivli Lighthouse",
+                address: "Ambivli Lighthouse, Atali Koliwada, Near Virat Residency, Atali, Ambivali West, Ambivali, Maharashtra- 421102",
+                lat: 19.269647094260712,
+                lng: 73.1688336846566,
+                mapsUrl: "https://www.google.com/maps/place/Lighthouse+Skilling+Centre+-+Ambivli/data=!4m2!3m1!1s0x0:0x4d57e80575181f85?sa=X&ved=1t:2428&ictx=111&cshid=1768197571602121"
+            },
+            {
+                name: "MCC Thane Lighthouse",
+                address: "District Skill Development & Entrepreneurship Guidance Centre, Thane Old Treasury Office, Collectorate Compound, Court Naka, Thane (W) 400601",
+                lat: 19.20127310372543,
+                lng: 72.97859967301508,
+                mapsUrl: "https://www.google.com/maps/place/MCC+Thane+Lighthouse/data=!4m2!3m1!1s0x0:0xe2e4e4b0cad6960e?sa=X&ved=1t:2428&ictx=111"
+            },
+            {
+                name: "ITI Mulund Lighthouse",
+                address: "ITI Mulund Lighthouse, 32, Babanrao Kulkarni Rd, Sajjan Wadi, Mulund East, Mumbai, Maharashtra 400081",
+                lat: 19.168544446010046,
+                lng: 72.95431674232829,
+                mapsUrl: "https://www.google.com/maps/place/ITI+Mulund+Lighthouse/@19.1683519,72.9543382,17z/data=!3m1!4b1!4m6!3m5!1s0x3be7b981106b7109:0x46622858d6e8e7b8!8m2!3d19.1683519!4d72.9543382!16s%2Fg%2F11kptq51bh?entry=ttu&g_ep=EgoyMDI2MDEwNy4wIKXMDSoASAFQAw%3D%3D"
+            },
+            {
+                name: "MCC Nagpur Lighthouse",
+                address: "Administrative Building No.02, 2nd Floor, Wing A, Premises of District Skill Development Employment and Entrepreneurship Guidence Center Civil Line, Nagpur, 440001",
+                lat: 21.1557811976835,
+                lng: 79.07119001349245,
+                mapsUrl: "https://maps.app.goo.gl/m3xK8qxY4oSBR2zv9"
+            },
+            {
+                name: "Palghar Lighthouse",
+                address: "Collector's Office, Headquarters Premises, Administrative Building 'B' Wing, 2nd Floor, Social Forestry Department Room No. 207, District Skill and Entrepreneurship Office, Secondary Registrar's Office, Palghar – 401404",
+                lat: "19.723454",
+                lng: "72.762602",
+                mapsUrl: "https://www.google.com/maps/place/Town+Planning+office+(ADTP),+Palghar/@19.723454,72.762602,17z/data=!3m1!4b1!4m6!3m5!1s0x3be71d32acb1794d:0x9d0de35a4a362dc0!8m2!3d19.723454!4d72.762602!16s%2Fg%2F11l748yjwj!18m1!1e1?entry=ttu&g_ep=EgoyMDI2MDExMy4wIKXMDSoASAFQAw%3D%3D"
+            },
+            {
+                name: "Kalkaji Lighthouse",
+                address: "Bhoomiheen Camp, Govindpuri, Kalkaji Basti Vikas Kendra (Adjoining Katha Khajana, Kalkaji) New Delhi- 110019",
+                lat: 28.5290099219948,
+                lng: 77.25958294232831,
+                mapsUrl: "https://www.google.com/maps/place/DSEU+Lighthouse+-+Kalkaji/data=!4m2!3m1!1s0x0:0x37f147c8eba3700c?sa=X&ved=1t:2428&ictx=111"
+            },
+            {
+                name: "Malkaganj Lighthouse",
+                address: "Malkaganj Lighthouse1st & 2nd Floor, Community Centre, Mukeem Pura, Tilak Chowk, Malka Ganj, New Delhi, Delhi 110007",
+                lat: 28.674963369171465,
+                lng: 77.20638491534338,
+                mapsUrl: "https://www.google.com/maps/place/DSEU+Lighthouse+-+Malka+Ganj/data=!4m2!3m1!1s0x0:0x8a810ea3399b5ef5?sa=X&ved=1t:2428&ictx=111"
+            },
+            {
+                name: "Matia Mahal Lighthouse",
+                address: "Ground & First Floor – Rain Basera, Open Theatre, Shankar Gali – Turkman Gate, New Delhi- 110006",
+                lat: 28.643668353199374,
+                lng: 77.23657554232831,
+                mapsUrl: "https://www.google.com/maps/place/DSEU+Lighthouse+-+Matia+Mahal/data=!4m2!3m1!1s0x0:0x606e174fe7dca456?sa=X&ved=1t:2428&ictx=111"
+            },
+            {
+                name: "Jatni Lighthouse",
+                address: "Srasta Townhall, Back Gate, First floor, Near Head Post Office Chowk, Jatni, Khurda, Odisha-752050",
+                lat: 20.163797640504995,
+                lng: 85.70087206931322,
+                mapsUrl: "https://www.google.com/maps/place/JATNI+LIGHTHOUSE/data=!4m2!3m1!1s0x0:0xff59e8ee1a483495?sa=X&ved=1t:2428&ictx=111"
+            },
+            {
+                name: "Cuttack Lighthouse",
+                address: "Chauliaganj Community Centre, 2nd Floor, Chauliaganj, Cuttack, 753004",
+                lat: 20.453885396155595,
+                lng: 85.90105228465661,
+                mapsUrl: "https://www.google.com/maps/place/Cuttack+Lighthouse/data=!4m2!3m1!1s0x0:0x728c52043efee2c3?sa=X&ved=1t:2428&ictx=111"
+            },
+            {
+                name: "Angul Lighthouse",
+                address: "Angul Zilla Kala Kendra-Ground Floor, Mishrapada, Angul-759122",
+                lat: 20.833638047188362,
+                lng: 85.09996594047736,
+                mapsUrl: "https://www.google.com/maps/place/Angul+Lighthouse/data=!4m2!3m1!1s0x0:0x55cffe060848d01d?sa=X&ved=1t:2428&ictx=111"
+            },
+            {
+                name: "Barbil Lighthouse",
+                address: "Government ITI Admin Building, First floor, Barbil-758035",
+                lat: 22.107174261835954,
+                lng: 85.36854618650753,
+                mapsUrl: "https://www.google.com/maps/place/Barbil+Lighthouse/data=!4m2!3m1!1s0x0:0xb592cd784c67b943?sa=X&ved=1t:2428&ictx=111"
+            },
+            {
+                name: "Bhubaneshwar Lighthouse",
+                address: "136-139, Kalyan Mandap St, Saheed Nagar, Bhubaneswar, Odisha 751007",
+                lat: 20.29296375839989,
+                lng: 85.84986028650756,
+                mapsUrl: "https://www.google.com/maps/place/Bhubaneswar+Lighthouse+and+Jaga+Skilling+Hub/@20.2927625,85.8498281,17z/data=!3m1!4b1!4m6!3m5!1s0x3a190a02bf3ed335:0x9c6b5dd3cd1cd49f!8m2!3d20.2927625!4d85.8498281!16s%2Fg%2F11c6f20sj7?entry=ttu&g_ep=EgoyMDI2MDEwNy4wIKXMDSoASAFQAw%3D%3D"
+            },
+            {
+                name: "Bharatpur Lighthouse",
+                address: "First Floor, Community Centre Cluster 8, Bharatpur, Bhubaneswar, Odisha 751003",
+                lat: 20.293012506648342,
+                lng: 85.77823379999998,
+                mapsUrl: "https://www.google.com/maps/place/Bharatpur+Lighthouse/data=!4m2!3m1!1s0x0:0x3f71af02aef452fc?sa=X&ved=1t:2428&ictx=111"
+            },
+            {
+                name: "Rourkela Lighthouse",
+                address: "G Block Rd, Sector 6, Rourkela, Raurkela Industrialship, Odisha 769002",
+                lat: 22.26285432673205,
+                lng: 84.8626869693132,
+                mapsUrl: "https://www.google.com/maps/place/Rourkela+Lighthouse/data=!4m2!3m1!1s0x0:0x81eef1fbc612122d?sa=X&ved=1t:2428&ictx=111"
+            },
+            {
+                name: "Chandanagar Lighthouse",
+                address: "Huda colony, Chanda Nagar, Hyderabad",
+                lat: 17.487914759172835,
+                lng: 78.33183591534338,
+                mapsUrl: "https://www.google.com/maps/place/Lighthouse+Skilling+Centre+-+Chandanagar/data=!4m2!3m1!1s0x0:0xcdd83a06dd595a22?sa=X&ved=1t:2428&ictx=111 "
+            },
+            {
+                name: "Borabanda Lighthouse",
+                address: "Site-3, Silpi Nagar, Borabanda, Hyderabad, Telangana 500018",
+                lat: "17.4476821",
+                lng: "78.4066015",
+                mapsUrl: "https://www.google.com/maps/place/LIGHT+HOUSE+BORABANDA+SKILLING+CENTER/@17.4476821,78.4066015,17z/data=!3m1!4b1!4m6!3m5!1s0x3bcb910038da4c23:0xf406d4206b75072d!8m2!3d17.4476821!4d78.4066015!16s%2Fg%2F11yxhjb2dp?entry=ttu&g_ep=EgoyMDI2MDExMy4wIKXMDSoASAFQAw%3D%3D"
+            },
+            {
+                name: "Mallepally Lighthouse",
+                address: "11-3-917/1/A, Mozampura, Bazar Ghat, New Mallepally, Hyderabad, Telangana 500001",
+                lat: 17.391520283654337,
+                lng: 78.45704341534338,
+                mapsUrl: "https://www.google.com/maps/place/MALLEPALLY+LIGHTHOUSE/data=!4m2!3m1!1s0x0:0x469a59d98769cd38?sa=X&ved=1t:2428&ictx=111"
+            },
+            {
+                name: "Kukatpally Lighthouse",
+                address: "2-22-105/H, Allwyn Colony Rd, Navodaya Colony, Kukatpally, Hyderabad, Telangana 500072",
+                lat: 17.50001684554852,
+                lng: 78.41266225952265,
+                mapsUrl: "https://www.google.com/maps/place/Durgabai+Mahila+Shishu+Vikasa+Kendra/@17.4998122,78.4125657,831m/data=!3m2!1e3!4b1!4m6!3m5!1s0x3bcb91c3f8c9caa9:0xc2c58f795b07b35d!8m2!3d17.4998122!4d78.4125657!16s%2Fg%2F11ckkxdf47?entry=tts&g_ep=EgoyMDI1MTAwOC4wIPu8ASoASAFQAw%3D%3D&skid=406eb025-7c56-48f7-bb5f-0deef8eb599b"
+            },
+            {
+                name: "Naka Hindola Lighthouse",
+                address: "Ganeshganj Lighthouse, Nagreey Prathmik Swasth Kendra, Ganeshganj Road, Fatehganj, Lucknow, UP – 226018",
+                lat: "26.8386923",
+                lng: "80.9211953",
+                mapsUrl: "https://www.google.com/maps/place/Lighthouse+Skilling+Centre+-+Naka+Hindola/@26.8386923,80.9211953,777m/data=!3m2!1e3!4b1!4m6!3m5!1s0x399bfdb4f63a6c91:0x722e95edc0bb29d0!8m2!3d26.8386923!4d80.9211953!16s%2Fg%2F11vkn_hf9t?entry=ttu&g_ep=EgoyMDI2MDExMy4wIKXMDSoASAFQAw%3D%3D"
+            },
+            {
+                name: "Balotra Lighthouse",
+                address: "Balotra Lighthouse, Govt ITI, Balotra Siwana Fanta , District Balotra – 344022",
+                lat: "25.7946548",
+                lng: "72.2328222",
+                mapsUrl: "https://www.google.com/maps/place/GOVT.+I.T.I+COLLEGE+BALOTRA/@25.7946548,72.2328222,784m/data=!3m2!1e3!4b1!4m6!3m5!1s0x3943eeb385bcaedd:0x485ded13fc2d70a9!8m2!3d25.7946548!4d72.2328222!16s%2Fg%2F11_t1nqrs!17m2!4m1!1e3!18m1!1e1?entry=ttu&g_ep=EgoyMDI2MDEwNy4wIKXMDSoKLDEwMDc5MjA2N0gBUAM%3D"
+            },            
+        ];
+
+        let redirectTimer;
+        let countdownInterval;
+        let nearestLighthouse;
+
+        // Road distance multiplier to approximate actual driving distance
+        // Multiplier of 1.4 accounts for roads not being straight lines
+        const ROAD_MULTIPLIER = 1.4;
+
+        // Calculate approximate road distance using straight-line distance with multiplier
+        function calculateApproximateRoadDistance(lat1, lon1, lat2, lon2) {
+            // First calculate straight-line distance using Haversine formula
+            const R = 6371; // Earth's radius in km
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                     Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                     Math.sin(dLon/2) * Math.sin(dLon/2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+            const straightLineDistance = R * c;
+            
+            // Apply multiplier to approximate road distance
+            return straightLineDistance * ROAD_MULTIPLIER;
+        }
+
+        function displayLighthouses(userLat, userLng) {
+            const grid = document.getElementById('lighthouseGrid');
+            const statusDiv = document.getElementById('status');
+            const loader = document.getElementById('loader');
+            
+            loader.style.display = 'none';
+            statusDiv.textContent = '✓ Found all lighthouses with estimated distances!';
+            
+            // Calculate distances and sort
+            const lighthousesWithDistance = lighthouses.map(lh => ({
+                ...lh,
+                distance: calculateApproximateRoadDistance(userLat, userLng, lh.lat, lh.lng)
+            })).sort((a, b) => a.distance - b.distance);
+            
+            nearestLighthouse = lighthousesWithDistance[0];
+            
+            // Display all lighthouses
+            grid.innerHTML = lighthousesWithDistance.map((lh, index) => `
+                <div class="lighthouse-card ${index === 0 ? 'nearest' : ''}" onclick="selectLighthouse('${lh.mapsUrl}')">
+                    ${index === 0 ? '<div class="nearest-badge">🎯 NEAREST</div>' : ''}
+                    <h3>${lh.name}</h3>
+                    <p>${lh.address}</p>
+                    <span class="distance">📍 ~${lh.distance.toFixed(1)} km away (approx.)</span>
+                </div>
+            `).join('');
+            
+            // Start countdown
+            startCountdown();
+        }
+
+        function startCountdown() {
+            const banner = document.getElementById('countdownBanner');
+            const countdownEl = document.getElementById('countdown');
+            let timeLeft = 15;
+            
+            banner.classList.add('show');
+            
+            countdownInterval = setInterval(() => {
+                timeLeft--;
+                countdownEl.textContent = timeLeft;
+                
+                if (timeLeft <= 0) {
+                    clearInterval(countdownInterval);
+                    window.location.href = nearestLighthouse.mapsUrl;
+                }
+            }, 1000);
+            
+            // Stop countdown on any user interaction
+            const stopCountdownOnInteraction = () => {
+                cancelRedirect();
+                document.removeEventListener('click', stopCountdownOnInteraction);
+                document.removeEventListener('scroll', stopCountdownOnInteraction);
+                document.removeEventListener('touchstart', stopCountdownOnInteraction);
+            };
+            
+            // Add event listeners for user interaction
+            setTimeout(() => {
+                document.addEventListener('click', stopCountdownOnInteraction);
+                document.addEventListener('scroll', stopCountdownOnInteraction);
+                document.addEventListener('touchstart', stopCountdownOnInteraction);
+            }, 100); // Small delay to avoid immediate trigger
+        }
+
+        function cancelRedirect() {
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+            }
+            const banner = document.getElementById('countdownBanner');
+            if (banner) {
+                banner.classList.remove('show');
+            }
+        }
+
+        function selectLighthouse(url) {
+            // Redirect immediately when user clicks a lighthouse
+            window.location.href = url;
+        }
+
+        function findLighthouses() {
+            const statusDiv = document.getElementById('status');
+            const loader = document.getElementById('loader');
+            
+            if (!navigator.geolocation) {
+                loader.style.display = 'none';
+                statusDiv.innerHTML = '<span class="error">❌ Your browser doesn\'t support location services</span>';
+                return;
+            }
+
+            if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+                loader.style.display = 'none';
+                statusDiv.innerHTML = '<span class="error">❌ This page must be accessed via HTTPS for location to work</span>';
+                return;
+            }
+            
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    displayLighthouses(position.coords.latitude, position.coords.longitude);
+                },
+                (error) => {
+                    loader.style.display = 'none';
+                    let errorMsg = '';
+                    
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMsg = '❌ Location Access Denied<br><small>Please enable location to see distances. Showing all lighthouses:</small>';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMsg = '❌ Location Unavailable<br><small>Showing all lighthouses:</small>';
+                            break;
+                        case error.TIMEOUT:
+                            errorMsg = '❌ Request Timed Out<br><small>Showing all lighthouses:</small>';
+                            break;
+                        default:
+                            errorMsg = '❌ Unable to Get Location<br><small>Showing all lighthouses:</small>';
+                    }
+                    
+                    statusDiv.innerHTML = errorMsg;
+                    
+                    // Show all lighthouses without distance
+                    const grid = document.getElementById('lighthouseGrid');
+                    grid.innerHTML = lighthouses.map(lh => `
+                        <div class="lighthouse-card" onclick="selectLighthouse('${lh.mapsUrl}')">
+                            <h3>${lh.name}</h3>
+                            <p>${lh.address}</p>
+                        </div>
+                    `).join('');
+                }
+            );
+        }
+
+        window.onload = findLighthouses;
+    </script>
+</body>
+</html>
